@@ -1,0 +1,55 @@
+---
+description: Clean Code Architecture and Modularity Rules for Frontend
+---
+
+# Clean Architecture and Modularity
+
+This file establishes the rules for code generation to ensure clean code architecture and high modularity in the React, Vite, Tailwind CSS, and Material UI frontend.
+
+## Component Architecture
+1. **Presentational (Dumb) Components**: Responsible only for UI rendering. They receive data and callbacks via props and have no side effects. 
+2. **Container (Smart) Components**: Responsible for fetching data, maintaining state, and passing necessary data down to presentational components.
+3. **Pages/Views**: Top-level route components that compose multiple smart/dumb components to form a complete screen.
+
+## Modularity & File Structure
+- Group by feature (e.g., `src/features/video-player`, `src/features/auth`) containing all related components, hooks, and services.
+- Shared components (buttons, layout), hooks, and utilities should live in a common `src/shared` or `src/common` directory.
+- Keep components small and focused. If a file exceeds 200-300 lines, consider breaking it down further.
+
+## Recommended Structure
+src/
+├── assets/           # Static assets like images and global CSS
+├── components/       # Shared UI components (dumb)
+├── features/         # Feature-based modular code
+│   └── video-list/
+│       ├── api/          # Feature-specific API queries
+│       ├── components/   # Feature-specific components
+│       ├── hooks/        # Feature-specific hooks
+│       └── VideoList.tsx # Main feature entry
+├── hooks/            # Global custom hooks
+├── layouts/          # Page layout wrappers
+├── pages/            # Application pages (route handlers)
+├── services/         # API integration (e.g., Axios setup)
+├── store/            # Global state management context/slices
+└── utils/            # Shared helper functions
+
+## TypeScript & State Management
+- Utilize TypeScript for strong typing. Define strict `interface`s or `type`s for all props, state, and API responses. Avoid `any`.
+- Keep complex state management out of simple components. Use Context API or specialized state managers for global state, and Custom Hooks for complex local state.
+- Keep custom hooks pure and isolated from UI logic.
+
+## Styling (Tailwind + Material UI)
+- Prefer using Material UI (MUI) components for complex interactive widgets (e.g., Selects, Dialogs, Sliders).
+- Use Tailwind CSS for structural layout, spacing, colors, and utility-based styling (`className="flex items-center gap-4 p-4"`).
+- Minimize custom CSS files. If needed, leverage Tailwind's `@apply` in global CSS or MUI's `sx` prop for deep overrides sparingly.
+- Maintain a consistent design system (colors, typography) defined in both Tailwind configuration and MUI Theme.
+
+## Naming Conventions
+- **Folders/React Files**: `PascalCase.tsx` for components (e.g., `VideoPlayer.tsx`), `kebab-case` for general folders if preferred, or `camelCase` for non-component files (`useVideoList.ts`).
+- **Hooks**: `camelCase` starting with `use` (e.g., `useAuth`).
+- **Interfaces/Types**: `PascalCase` (e.g., `VideoProps`, `UserType`).
+
+## Error Handling & Performance
+- Use React Error Boundaries for catching runtime errors in component trees.
+- Abstract API calls into separate services or custom hooks. Do not inline `fetch` or `axios` calls directly inside components unless using robust data fetching libraries like React Query.
+- Use `React.memo`, `useMemo`, and `useCallback` appropriately to prevent unnecessary re-renders, especially in large lists or video rendering components.
