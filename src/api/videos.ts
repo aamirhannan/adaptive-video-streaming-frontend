@@ -70,26 +70,21 @@ export const uploadVideo = (
   });
 };
 
-export const fetchVideoStreamBlob = async (
+/**
+ * URL for `<video src>` so the browser can issue HTTP Range requests (206)
+ * for incremental buffering. The JWT is passed as `access_token` because
+ * `<video>` cannot send Authorization headers.
+ */
+export const getVideoStreamUrl = (
   token: string,
   videoId: string,
   quality: StreamQuality,
-): Promise<Blob> => {
+): string => {
   const base = getApiBaseUrl();
-  const url = `${base}/api/videos/${encodeURIComponent(videoId)}/stream?quality=${quality}`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    let message = text;
-    try {
-      const j = JSON.parse(text) as { message?: string };
-      message = j.message ?? text;
-    } catch {
-      /* ignore */
-    }
-    throw new ApiError(res.status, message);
-  }
-  return res.blob();
+  const url = new URL(
+    `${base}/api/videos/${encodeURIComponent(videoId)}/stream`,
+  );
+  url.searchParams.set("quality", quality);
+  url.searchParams.set("access_token", token);
+  return url.toString();
 };

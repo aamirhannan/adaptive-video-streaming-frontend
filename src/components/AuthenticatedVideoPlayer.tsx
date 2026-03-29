@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
@@ -10,8 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { StreamQuality } from "../api/types.js";
-import { fetchVideoStreamBlob } from "../api/videos.js";
-import { ApiError } from "../api/errors.js";
+import { getVideoStreamUrl } from "../api/videos.js";
 
 type Props = {
   token: string;
@@ -27,53 +26,22 @@ export const AuthenticatedVideoPlayer = ({
   sensitivity,
 }: Props) => {
   const [quality, setQuality] = useState<StreamQuality>("720");
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [buffering, setBuffering] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const streamUrl = useMemo(
+    () => getVideoStreamUrl(token, videoId, quality),
+    [token, videoId, quality],
+  );
 
   useEffect(() => {
     if (!canPlayFlagged && sensitivity === "flagged") {
-      setBlobUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
       setError(null);
       return;
     }
-
-    let cancelled = false;
-
-    const run = async () => {
-      setLoading(true);
-      setError(null);
-      setBlobUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
-      try {
-        const blob = await fetchVideoStreamBlob(token, videoId, quality);
-        if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        setBlobUrl(url);
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof ApiError ? e.message : "Playback failed");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    void run();
-
-    return () => {
-      cancelled = true;
-      setBlobUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
-    };
-  }, [token, videoId, quality, canPlayFlagged, sensitivity]);
+    setBuffering(true);
+    setError(null);
+  }, [streamUrl, canPlayFlagged, sensitivity]);
 
   if (!canPlayFlagged && sensitivity === "flagged") {
     return (
@@ -98,23 +66,39 @@ export const AuthenticatedVideoPlayer = ({
         </Select>
       </FormControl>
       {error && <Alert severity="error">{error}</Alert>}
-      {loading && (
+      {buffering && (
         <Box className="flex items-center gap-2">
           <CircularProgress size={24} />
-          <Typography variant="body2">Loading video…</Typography>
+          <Typography variant="body2">Buffering…</Typography>
         </Box>
       )}
-      {blobUrl && !loading && (
-        <video
-          className="w-full max-h-[70vh] rounded bg-black"
-          src={blobUrl}
-          controls
-          playsInline
-        />
-      )}
+      <video
+        key={streamUrl}
+        className="w-full max-h-[70vh] rounded bg-black"
+        src={streamUrl}
+        crossOrigin="anonymous"
+        controls
+        playsInline
+        preload="auto"
+        onLoadStart={() => {
+          setBuffering(true);
+          setError(null);
+        }}
+        onCanPlay={() => setBuffering(false)}
+        onWaiting={() => setBuffering(true)}
+        onPlaying={() => setBuffering(false)}
+        onError={() => {
+          setBuffering(false);
+          setError(
+            "Playback failed (check network, CORS, or an expired session).",
+          );
+        }}
+      />
       <Typography variant="caption" color="text.secondary">
-        Playback loads the full rendition into memory (JWT-authenticated fetch),
-        suitable for demos. Large files may be slow.
+        Playback uses the browser’s native stack: it issues HTTP Range requests
+        (typically 206 Partial Content) for incremental buffering. The JWT is in
+        the query as access_token because a video element cannot send an
+        Authorization header.
       </Typography>
     </Box>
   );

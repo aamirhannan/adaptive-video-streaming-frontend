@@ -43,7 +43,7 @@ React (Vite) UI for the assignment workflow: **register/login**, **video library
 1. **Register** or **login** — JWT stored in `localStorage` (`avs_token`, `avs_user`).
 2. **Library** — lists your videos; optional filters `status`, `sensitivity`; progress merged from **Socket.io** events.
 3. **Upload** (editor/admin) — multipart upload with **XHR progress**; processing phases shown via sockets.
-4. **Video detail** — metadata, sensitivity, analysis summary; **player** fetches the stream with `Authorization` and selected `quality` (blob URL; fine for demos; large files load fully into memory).
+4. **Video detail** — metadata, sensitivity, analysis summary; **player** uses `<video src>` with `access_token` and `quality` query params so the browser performs HTTP Range requests (incremental buffering) against the stream URL.
 5. **Admin → Users** — list users and change roles (`GET/PATCH` `/api/admin/...`).
 
 ## Integration notes
