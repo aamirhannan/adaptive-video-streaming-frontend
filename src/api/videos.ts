@@ -78,6 +78,16 @@ export const deleteVideoShare = async (
   );
 };
 
+export const deleteVideo = async (
+  token: string,
+  videoId: string,
+): Promise<void> => {
+  return apiFetch<void>(`/api/videos/${encodeURIComponent(videoId)}`, {
+    method: "DELETE",
+    token,
+  });
+};
+
 export type UploadVideoResult = { video: Video };
 
 export const uploadVideo = (

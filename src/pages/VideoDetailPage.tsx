@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link as RouterLink, useParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -22,11 +22,13 @@ import { ApiError } from "../api/errors.js";
 
 export const VideoDetailPage = () => {
   const { videoId } = useParams<{ videoId: string }>();
+  const navigate = useNavigate();
   const { token, user } = useAuth();
   const [video, setVideo] = useState<Video | null>(null);
   const [shares, setShares] = useState<VideoShare[]>([]);
   const [shareUserId, setShareUserId] = useState("");
   const [shareBusy, setShareBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,6 +64,7 @@ export const VideoDetailPage = () => {
 
   const canPlayFlagged = user?.role !== "viewer";
   const canManageShares = user?.role === "editor" || user?.role === "admin";
+  const canDeleteVideo = user?.role === "editor" || user?.role === "admin";
 
   if (!videoId) {
     return <Alert severity="error">Missing video id</Alert>;
@@ -117,6 +120,24 @@ export const VideoDetailPage = () => {
     }
   };
 
+  const onDeleteVideo = async () => {
+    if (!token || !videoId) return;
+    const ok = window.confirm(
+      "Delete this video permanently? This also removes stored files and all sharing assignments.",
+    );
+    if (!ok) return;
+    setDeleteBusy(true);
+    setError(null);
+    try {
+      await videosApi.deleteVideo(token, videoId);
+      navigate("/", { replace: true });
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Failed to delete video");
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
   return (
     <Box className="space-y-4">
       <Button component={RouterLink} to="/" variant="text">
@@ -128,6 +149,16 @@ export const VideoDetailPage = () => {
       <Box className="flex flex-wrap gap-2">
         <Chip label={`status: ${video.status}`} />
         <Chip label={`sensitivity: ${video.sensitivity}`} />
+        {canDeleteVideo && (
+          <Button
+            color="error"
+            variant="outlined"
+            disabled={deleteBusy || shareBusy}
+            onClick={() => void onDeleteVideo()}
+          >
+            {deleteBusy ? "Deleting..." : "Delete video"}
+          </Button>
+        )}
       </Box>
       {video.analysisSummary && (
         <Paper className="p-3">
