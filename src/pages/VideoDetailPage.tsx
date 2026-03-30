@@ -17,7 +17,7 @@ export const VideoDetailPage = () => {
   const { token, user } = useAuth();
   const [video, setVideo] = useState<Video | null>(null);
   const [shares, setShares] = useState<VideoShare[]>([]);
-  const [shareUserId, setShareUserId] = useState("");
+  const [shareTarget, setShareTarget] = useState("");
   const [shareBusy, setShareBusy] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,13 +76,13 @@ export const VideoDetailPage = () => {
 
   const onCreateShare = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !videoId || !shareUserId.trim()) return;
+    if (!token || !videoId || !shareTarget.trim()) return;
     setShareBusy(true);
     setError(null);
     try {
-      const res = await videosApi.createVideoShare(token, videoId, shareUserId.trim());
+      const res = await videosApi.createVideoShare(token, videoId, shareTarget.trim());
       setShares((prev) => [res.share, ...prev]);
-      setShareUserId("");
+      setShareTarget("");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Failed to share video");
     } finally {
@@ -178,15 +178,17 @@ export const VideoDetailPage = () => {
       {canManageShares && (
         <Card className="space-y-3">
           <h2 className="text-lg font-semibold">Sharing</h2>
-          <p className="text-sm text-slate-400">Share this video with a viewer by user ID.</p>
+          <p className="text-sm text-slate-400">
+            Share this video with a viewer by user ID or email.
+          </p>
           <form onSubmit={onCreateShare} className="flex flex-wrap gap-2">
             <Input
-              value={shareUserId}
+              value={shareTarget}
               disabled={shareBusy}
-              onChange={(e) => setShareUserId(e.target.value)}
-              placeholder="Viewer user ID"
+              onChange={(e) => setShareTarget(e.target.value)}
+              placeholder="Viewer user ID or email"
             />
-            <Button type="submit" disabled={shareBusy || !shareUserId.trim()}>
+            <Button type="submit" disabled={shareBusy || !shareTarget.trim()}>
               Share
             </Button>
           </form>

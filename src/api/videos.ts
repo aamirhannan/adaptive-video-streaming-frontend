@@ -52,13 +52,13 @@ export const listVideoShares = async (
 export const createVideoShare = async (
   token: string,
   videoId: string,
-  sharedWithUserId: string,
+  sharedWith: string,
 ): Promise<{ share: VideoShare }> => {
   return apiFetch<{ share: VideoShare }>(
     `/api/videos/${encodeURIComponent(videoId)}/shares`,
     {
       method: "POST",
-      body: JSON.stringify({ sharedWithUserId }),
+      body: JSON.stringify({ sharedWith }),
       token,
     },
   );

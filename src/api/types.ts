@@ -27,6 +27,7 @@ export type VideoVariant = {
 export type Video = {
   videoId: string;
   ownerUserId: string;
+  ownerEmail: string;
   originalName: string;
   storedFileName: string;
   storagePath: string;

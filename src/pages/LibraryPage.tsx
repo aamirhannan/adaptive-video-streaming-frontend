@@ -105,6 +105,7 @@ export const LibraryPage = () => {
             <thead className="border-b border-white/10 bg-white/5 text-xs uppercase tracking-wide text-slate-300">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Created By</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Sensitivity</th>
                 <th className="px-4 py-3 font-medium">Progress</th>
@@ -115,13 +116,13 @@ export const LibraryPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td className="px-4 py-6 text-slate-400" colSpan={6}>
+                  <td className="px-4 py-6 text-slate-400" colSpan={7}>
                     Loading videos...
                   </td>
                 </tr>
               ) : mergedRows.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-6 text-slate-400" colSpan={6}>
+                  <td className="px-4 py-6 text-slate-400" colSpan={7}>
                     No videos found for the selected filters.
                   </td>
                 </tr>
@@ -135,6 +136,9 @@ export const LibraryPage = () => {
                     className="border-b border-white/8 text-slate-200 last:border-none hover:bg-white/5"
                   >
                     <td className="max-w-[28rem] truncate px-4 py-3">{row.originalName}</td>
+                    <td className="max-w-[16rem] truncate px-4 py-3 text-slate-300">
+                      {row.ownerEmail || row.ownerUserId}
+                    </td>
                     <td className="px-4 py-3">
                       <Badge
                         label={row.displayStatus}
