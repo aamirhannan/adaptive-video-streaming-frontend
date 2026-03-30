@@ -1,18 +1,13 @@
+import { motion } from "framer-motion";
 import { useState } from "react";
-import { Link as RouterLink, Navigate, useNavigate } from "react-router-dom";
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  Link,
-  TextField,
-  Typography,
-} from "@mui/material";
-import { useAuth } from "../contexts/AuthContext.js";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { ApiError } from "../api/errors.js";
+import { useAuth } from "../contexts/AuthContext.js";
+import { Alert } from "../components/ui/alert.js";
+import { Button } from "../components/ui/button.js";
+import { Card } from "../components/ui/card.js";
+import { Input } from "../components/ui/input.js";
+import { Spinner } from "../components/ui/spinner.js";
 
 export const LoginPage = () => {
   const { login, token, loading } = useAuth();
@@ -22,15 +17,13 @@ export const LoginPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (!loading && token) {
-    return <Navigate to="/" replace />;
-  }
+  if (!loading && token) return <Navigate to="/" replace />;
 
   if (loading) {
     return (
-      <Box className="flex justify-center items-center min-h-[70vh]">
-        <CircularProgress />
-      </Box>
+      <div className="grid min-h-screen place-items-center">
+        <Spinner size={22} />
+      </div>
     );
   }
 
@@ -49,53 +42,58 @@ export const LoginPage = () => {
   };
 
   return (
-    <Box className="flex justify-center items-center min-h-[70vh]">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardContent className="space-y-4">
-          <Typography variant="h5" component="h1">
-            Sign in
-          </Typography>
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <TextField
-              fullWidth
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-            <TextField
-              fullWidth
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={submitting}
-            >
-              {submitting ? "Signing in…" : "Sign in"}
-            </Button>
-          </form>
-          <Typography variant="body2">
-            No account?{" "}
-            <Link component={RouterLink} to="/register">
-              Register
-            </Link>
-          </Typography>
-        </CardContent>
-      </Card>
-    </Box>
+    <div className="grid min-h-screen place-items-center px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="w-full max-w-md"
+      >
+        <Card className="relative overflow-hidden p-6">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.2),transparent_50%)]" />
+          <div className="relative space-y-4">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
+              Welcome back
+            </h1>
+            <p className="text-sm text-slate-400">
+              Sign in to manage uploads, sharing, and playback.
+            </p>
+            {error && <Alert>{error}</Alert>}
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                autoComplete="email"
+              />
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                required
+                autoComplete="current-password"
+              />
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={submitting}
+                size="lg"
+              >
+                {submitting ? "Signing in..." : "Sign in"}
+              </Button>
+            </form>
+            <p className="text-xs text-slate-400">
+              No account?{" "}
+              <Link to="/register" className="text-violet-300 hover:text-violet-200">
+                Create one
+              </Link>
+            </p>
+          </div>
+        </Card>
+      </motion.div>
+    </div>
   );
 };

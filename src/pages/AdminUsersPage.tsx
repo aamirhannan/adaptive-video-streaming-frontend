@@ -1,25 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  FormControl,
-  InputLabel,
-  LinearProgress,
-  MenuItem,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
-import type { Role, User } from "../api/types.js";
 import * as adminApi from "../api/admin.js";
-import { useAuth } from "../contexts/AuthContext.js";
 import { ApiError } from "../api/errors.js";
+import type { Role, User } from "../api/types.js";
+import { Alert } from "../components/ui/alert.js";
+import { Button } from "../components/ui/button.js";
+import { Card } from "../components/ui/card.js";
+import { useAuth } from "../contexts/AuthContext.js";
 
 const ROLES: Role[] = ["viewer", "editor", "admin"];
 
@@ -54,9 +40,7 @@ export const AdminUsersPage = () => {
     setError(null);
     try {
       const res = await adminApi.updateUserRole(token, userId, role);
-      setUsers((prev) =>
-        prev.map((u) => (u.userId === userId ? res.user : u)),
-      );
+      setUsers((prev) => prev.map((u) => (u.userId === userId ? res.user : u)));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Update failed");
     } finally {
@@ -64,67 +48,69 @@ export const AdminUsersPage = () => {
     }
   };
 
-  if (loading) {
-    return <LinearProgress />;
-  }
-
   return (
-    <Box className="space-y-4">
-      <Typography variant="h4" component="h1">
-        Users (admin)
-      </Typography>
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-      <Button variant="outlined" onClick={() => void load()}>
-        Refresh
-      </Button>
-      <Table component={Paper} size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Email</TableCell>
-            <TableCell>User ID</TableCell>
-            <TableCell>Role</TableCell>
-            <TableCell>Updated</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {users.map((u) => (
-            <TableRow key={u.userId}>
-              <TableCell>{u.email}</TableCell>
-              <TableCell className="font-mono text-xs max-w-[200px] truncate">
-                {u.userId}
-              </TableCell>
-              <TableCell>
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <InputLabel>Role</InputLabel>
-                  <Select
-                    label="Role"
-                    value={u.role}
-                    disabled={savingId === u.userId}
-                    onChange={(e) =>
-                      void changeRole(u.userId, e.target.value as Role)
-                    }
-                  >
-                    {ROLES.map((r) => (
-                      <MenuItem key={r} value={r}>
-                        {r}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </TableCell>
-              <TableCell>
-                {u.updatedAt
-                  ? new Date(u.updatedAt).toLocaleString()
-                  : "—"}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Box>
+    <div className="space-y-4">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Users</h1>
+          <p className="mt-1 text-sm text-slate-400">Admin role management dashboard.</p>
+        </div>
+        <Button variant="outline" onClick={() => void load()}>
+          Refresh
+        </Button>
+      </div>
+
+      {error && <Alert>{error}</Alert>}
+
+      <Card className="overflow-hidden p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-white/10 bg-white/5 text-xs uppercase tracking-wide text-slate-300">
+              <tr>
+                <th className="px-4 py-3 font-medium">Email</th>
+                <th className="px-4 py-3 font-medium">User ID</th>
+                <th className="px-4 py-3 font-medium">Role</th>
+                <th className="px-4 py-3 font-medium">Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td className="px-4 py-6 text-slate-400" colSpan={4}>
+                    Loading users...
+                  </td>
+                </tr>
+              ) : (
+                users.map((u) => (
+                  <tr key={u.userId} className="border-b border-white/8 hover:bg-white/5">
+                    <td className="px-4 py-3">{u.email}</td>
+                    <td className="max-w-[20rem] truncate px-4 py-3 font-mono text-xs text-slate-300">
+                      {u.userId}
+                    </td>
+                    <td className="px-4 py-3">
+                      <select
+                        className="h-9 rounded-lg border border-white/15 bg-white/5 px-2 text-sm outline-none focus:border-violet-400/50"
+                        value={u.role}
+                        disabled={savingId === u.userId}
+                        onChange={(e) => void changeRole(u.userId, e.target.value as Role)}
+                      >
+                        {ROLES.map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">
+                      {u.updatedAt ? new Date(u.updatedAt).toLocaleString() : "—"}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
   );
 };

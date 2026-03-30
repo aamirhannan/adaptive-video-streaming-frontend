@@ -1,16 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Box,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Typography,
-} from "@mui/material";
 import type { StreamQuality } from "../api/types.js";
 import { getVideoStreamUrl } from "../api/videos.js";
+import { Alert } from "./ui/alert.js";
+import { Spinner } from "./ui/spinner.js";
 
 type Props = {
   token: string;
@@ -44,37 +36,37 @@ export const AuthenticatedVideoPlayer = ({
   }, [streamUrl, canPlayFlagged, sensitivity]);
 
   if (!canPlayFlagged && sensitivity === "flagged") {
-    return (
-      <Alert severity="warning">
-        Flagged content cannot be streamed with a viewer role.
-      </Alert>
-    );
+    return <Alert tone="warning">Flagged content is restricted for viewers.</Alert>;
   }
 
   return (
-    <Box className="space-y-2">
-      <FormControl size="small" sx={{ minWidth: 140 }}>
-        <InputLabel>Quality</InputLabel>
-        <Select
-          label="Quality"
-          value={quality}
-          onChange={(e) => setQuality(e.target.value as StreamQuality)}
-        >
-          <MenuItem value="240">240p</MenuItem>
-          <MenuItem value="480">480p</MenuItem>
-          <MenuItem value="720">720p</MenuItem>
-        </Select>
-      </FormControl>
-      {error && <Alert severity="error">{error}</Alert>}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <label className="text-sm text-slate-300">
+          Quality
+          <select
+            value={quality}
+            onChange={(e) => setQuality(e.target.value as StreamQuality)}
+            className="ml-2 h-9 rounded-lg border border-white/15 bg-white/5 px-2 text-sm outline-none"
+          >
+            <option value="240">240p</option>
+            <option value="480">480p</option>
+            <option value="720">720p</option>
+          </select>
+        </label>
+      </div>
+
+      {error && <Alert>{error}</Alert>}
       {buffering && (
-        <Box className="flex items-center gap-2">
-          <CircularProgress size={24} />
-          <Typography variant="body2">Buffering…</Typography>
-        </Box>
+        <div className="flex items-center gap-2 text-sm text-slate-300">
+          <Spinner />
+          Buffering...
+        </div>
       )}
+
       <video
         key={streamUrl}
-        className="w-full max-h-[70vh] rounded bg-black"
+        className="w-full max-h-[70vh] rounded-2xl border border-white/10 bg-black/70"
         src={streamUrl}
         crossOrigin="anonymous"
         controls
@@ -89,17 +81,14 @@ export const AuthenticatedVideoPlayer = ({
         onPlaying={() => setBuffering(false)}
         onError={() => {
           setBuffering(false);
-          setError(
-            "Playback failed (check network, CORS, or an expired session).",
-          );
+          setError("Playback failed (network/CORS/session).");
         }}
       />
-      <Typography variant="caption" color="text.secondary">
-        Playback uses the browser’s native stack: it issues HTTP Range requests
-        (typically 206 Partial Content) for incremental buffering. The JWT is in
-        the query as access_token because a video element cannot send an
-        Authorization header.
-      </Typography>
-    </Box>
+
+      <p className="text-xs text-slate-400">
+        Browser-native range streaming (206). JWT is passed as access_token for
+        the video element URL playback.
+      </p>
+    </div>
   );
 };

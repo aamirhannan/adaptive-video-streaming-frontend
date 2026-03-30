@@ -1,16 +1,13 @@
+import { motion } from "framer-motion";
+import { UploadCloud } from "lucide-react";
 import { useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
-import {
-  Alert,
-  Box,
-  Button,
-  LinearProgress,
-  Paper,
-  Typography,
-} from "@mui/material";
-import * as videosApi from "../api/videos.js";
-import { useAuth } from "../contexts/AuthContext.js";
+import { Link } from "react-router-dom";
 import { ApiError } from "../api/errors.js";
+import * as videosApi from "../api/videos.js";
+import { Alert } from "../components/ui/alert.js";
+import { Button } from "../components/ui/button.js";
+import { Card } from "../components/ui/card.js";
+import { useAuth } from "../contexts/AuthContext.js";
 
 export const UploadPage = () => {
   const { token } = useAuth();
@@ -29,7 +26,7 @@ export const UploadPage = () => {
     setUploadPct(0);
     try {
       const res = await videosApi.uploadVideo(file, token, setUploadPct);
-      setDone(`Uploaded: ${res.video.originalName} (${res.video.videoId})`);
+      setDone(`Uploaded: ${res.video.originalName}`);
       setFile(null);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Upload failed");
@@ -39,59 +36,63 @@ export const UploadPage = () => {
   };
 
   return (
-    <Box className="max-w-xl space-y-4">
-      <Typography variant="h4" component="h1">
-        Upload video
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        Allowed: mp4, mov, webm, mkv — max 200MB. Field name must be{" "}
-        <code>video</code> (handled by the client).
-      </Typography>
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+    <div className="max-w-2xl space-y-4">
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">Upload video</h1>
+        <p className="mt-1 text-sm text-slate-400">
+          Allowed: mp4/mov/webm/mkv, max 200MB.
+        </p>
+      </div>
+
+      {error && <Alert>{error}</Alert>}
       {done && (
-        <Alert severity="success" onClose={() => setDone(null)}>
+        <Alert tone="success">
           {done}{" "}
-          <Button component={RouterLink} to="/" size="small">
+          <Link to="/" className="font-medium text-emerald-200 underline underline-offset-4">
             View library
-          </Button>
+          </Link>
         </Alert>
       )}
-      <Paper className="p-4">
+
+      <Card className="p-5">
         <form onSubmit={onSubmit} className="space-y-4">
-          <Button variant="outlined" component="label">
-            Choose file
+          <label className="block cursor-pointer rounded-2xl border border-dashed border-white/20 bg-white/5 p-6 text-center transition-colors hover:bg-white/10">
+            <UploadCloud className="mx-auto mb-2 h-7 w-7 text-violet-300" />
+            <div className="text-sm text-slate-200">Choose a video file</div>
+            <div className="text-xs text-slate-400">Click to browse local files</div>
             <input
               type="file"
               hidden
               accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
-          </Button>
+          </label>
+
           {file && (
-            <Typography variant="body2">
+            <p className="text-sm text-slate-300">
               {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
-            </Typography>
+            </p>
           )}
+
           {busy && (
-            <Box>
-              <Typography variant="caption">Upload progress</Typography>
-              <LinearProgress variant="determinate" value={uploadPct} />
-              <Typography variant="caption">{uploadPct}%</Typography>
-            </Box>
+            <div className="space-y-2">
+              <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-500"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${uploadPct}%` }}
+                  transition={{ duration: 0.25 }}
+                />
+              </div>
+              <p className="text-xs text-slate-400">{uploadPct}% uploaded</p>
+            </div>
           )}
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={!file || busy}
-          >
-            {busy ? "Uploading…" : "Upload"}
+
+          <Button type="submit" disabled={!file || busy}>
+            {busy ? "Uploading..." : "Upload"}
           </Button>
         </form>
-      </Paper>
-    </Box>
+      </Card>
+    </div>
   );
 };

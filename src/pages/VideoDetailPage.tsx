@@ -1,24 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  IconButton,
-  LinearProgress,
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import * as videosApi from "../api/videos.js";
 import type { Video, VideoShare } from "../api/types.js";
 import { useAuth } from "../contexts/AuthContext.js";
 import { AuthenticatedVideoPlayer } from "../components/AuthenticatedVideoPlayer.js";
 import { ApiError } from "../api/errors.js";
+import { Alert } from "../components/ui/alert.js";
+import { Badge } from "../components/ui/badge.js";
+import { Button } from "../components/ui/button.js";
+import { Card } from "../components/ui/card.js";
+import { Input } from "../components/ui/input.js";
 
 export const VideoDetailPage = () => {
   const { videoId } = useParams<{ videoId: string }>();
@@ -66,24 +57,17 @@ export const VideoDetailPage = () => {
   const canManageShares = user?.role === "editor" || user?.role === "admin";
   const canDeleteVideo = user?.role === "editor" || user?.role === "admin";
 
-  if (!videoId) {
-    return <Alert severity="error">Missing video id</Alert>;
-  }
-
-  if (loading) {
-    return <LinearProgress />;
-  }
-
-  if (error || !video) {
+  if (!videoId) return <Alert>Missing video id</Alert>;
+  if (loading) return <div className="text-sm text-slate-400">Loading video...</div>;
+  if (error || !video)
     return (
-      <Alert severity="error">
+      <Alert>
         {error ?? "Not found"}{" "}
-        <Button component={RouterLink} to="/">
+        <Link to="/" className="underline underline-offset-4">
           Back
-        </Button>
+        </Link>
       </Alert>
     );
-  }
 
   const readyToStream =
     video.status !== "uploaded" &&
@@ -123,7 +107,7 @@ export const VideoDetailPage = () => {
   const onDeleteVideo = async () => {
     if (!token || !videoId) return;
     const ok = window.confirm(
-      "Delete this video permanently? This also removes stored files and all sharing assignments.",
+      "Delete this video permanently? This removes stored files and all shares.",
     );
     if (!ok) return;
     setDeleteBusy(true);
@@ -139,43 +123,47 @@ export const VideoDetailPage = () => {
   };
 
   return (
-    <Box className="space-y-4">
-      <Button component={RouterLink} to="/" variant="text">
-        ← Library
+    <div className="space-y-4">
+      <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+        Back
       </Button>
-      <Typography variant="h4" component="h1">
-        {video.originalName}
-      </Typography>
-      <Box className="flex flex-wrap gap-2">
-        <Chip label={`status: ${video.status}`} />
-        <Chip label={`sensitivity: ${video.sensitivity}`} />
-        {canDeleteVideo && (
-          <Button
-            color="error"
-            variant="outlined"
-            disabled={deleteBusy || shareBusy}
-            onClick={() => void onDeleteVideo()}
-          >
-            {deleteBusy ? "Deleting..." : "Delete video"}
-          </Button>
-        )}
-      </Box>
-      {video.analysisSummary && (
-        <Paper className="p-3">
-          <Typography variant="subtitle2" color="text.secondary">
-            Analysis
-          </Typography>
-          <Typography variant="body2" className="break-all">
+
+      <Card className="space-y-3">
+        <h1 className="text-2xl font-semibold">{video.originalName}</h1>
+        <div className="flex flex-wrap gap-2">
+          <Badge label={`status: ${video.status}`} />
+          <Badge
+            label={`sensitivity: ${video.sensitivity}`}
+            tone={video.sensitivity === "safe" ? "safe" : video.sensitivity === "flagged" ? "warn" : "neutral"}
+          />
+          {canDeleteVideo && (
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={deleteBusy || shareBusy}
+              onClick={() => void onDeleteVideo()}
+            >
+              {deleteBusy ? "Deleting..." : "Delete video"}
+            </Button>
+          )}
+        </div>
+        {video.analysisSummary && (
+          <p className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
             {video.analysisSummary}
-          </Typography>
-        </Paper>
-      )}
-      {video.variants && video.variants.length > 0 && (
-        <Typography variant="body2" color="text.secondary">
-          Variants:{" "}
-          {video.variants.map((v) => `${v.quality}p (${(v.sizeBytes / 1024).toFixed(0)} KB)`).join(", ")}
-        </Typography>
-      )}
+          </p>
+        )}
+        {video.variants && video.variants.length > 0 && (
+          <p className="text-xs text-slate-400">
+            Variants:{" "}
+            {video.variants
+              .map((v) => `${v.quality}p (${(v.sizeBytes / 1024).toFixed(0)} KB)`)
+              .join(", ")}
+          </p>
+        )}
+      </Card>
+
+      {error && <Alert>{error}</Alert>}
+
       {readyToStream && token ? (
         <AuthenticatedVideoPlayer
           token={token}
@@ -184,65 +172,53 @@ export const VideoDetailPage = () => {
           sensitivity={video.sensitivity}
         />
       ) : (
-        <Alert severity="info">
-          Video is not ready for playback yet (status: {video.status}).
-        </Alert>
+        <Alert tone="info">Video is not ready for playback (status: {video.status}).</Alert>
       )}
+
       {canManageShares && (
-        <Paper className="p-4 space-y-3">
-          <Typography variant="h6" component="h2">
-            Sharing
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Share this video with a viewer by user ID.
-          </Typography>
-          <Box component="form" onSubmit={onCreateShare} className="flex gap-2">
-            <TextField
-              size="small"
-              fullWidth
-              label="Viewer user ID"
+        <Card className="space-y-3">
+          <h2 className="text-lg font-semibold">Sharing</h2>
+          <p className="text-sm text-slate-400">Share this video with a viewer by user ID.</p>
+          <form onSubmit={onCreateShare} className="flex flex-wrap gap-2">
+            <Input
               value={shareUserId}
               disabled={shareBusy}
               onChange={(e) => setShareUserId(e.target.value)}
+              placeholder="Viewer user ID"
             />
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={shareBusy || !shareUserId.trim()}
-            >
+            <Button type="submit" disabled={shareBusy || !shareUserId.trim()}>
               Share
             </Button>
-          </Box>
+          </form>
           {shares.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No active shares.
-            </Typography>
+            <p className="text-sm text-slate-400">No active shares.</p>
           ) : (
-            <List dense disablePadding>
+            <div className="space-y-2">
               {shares.map((share) => (
-                <ListItem
+                <div
                   key={share.shareId}
-                  secondaryAction={
-                    <IconButton
-                      edge="end"
-                      aria-label="revoke share"
-                      disabled={shareBusy}
-                      onClick={() => void onDeleteShare(share.shareId)}
-                    >
-                      <Typography variant="button">X</Typography>
-                    </IconButton>
-                  }
+                  className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-2.5"
                 >
-                  <ListItemText
-                    primary={share.sharedWithUserId}
-                    secondary={`shared by ${share.sharedByUserId}`}
-                  />
-                </ListItem>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm">{share.sharedWithUserId}</div>
+                    <div className="text-xs text-slate-400">
+                      shared by {share.sharedByUserId}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={shareBusy}
+                    onClick={() => void onDeleteShare(share.shareId)}
+                  >
+                    Revoke
+                  </Button>
+                </div>
               ))}
-            </List>
+            </div>
           )}
-        </Paper>
+        </Card>
       )}
-    </Box>
+    </div>
   );
 };

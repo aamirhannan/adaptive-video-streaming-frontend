@@ -1,37 +1,32 @@
+import { motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  FormControl,
-  InputLabel,
-  LinearProgress,
-  MenuItem,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
-import type { Video, VideoStatus, Sensitivity } from "../api/types.js";
+import { Link } from "react-router-dom";
+import { ApiError } from "../api/errors.js";
+import type { Sensitivity, Video, VideoStatus } from "../api/types.js";
 import * as videosApi from "../api/videos.js";
+import { Alert } from "../components/ui/alert.js";
+import { Badge } from "../components/ui/badge.js";
+import { Button } from "../components/ui/button.js";
+import { Card } from "../components/ui/card.js";
 import { useAuth } from "../contexts/AuthContext.js";
 import { useVideoProgress } from "../contexts/VideoProgressContext.js";
-import { ApiError } from "../api/errors.js";
+
+const statusOptions: (VideoStatus | "")[] = [
+  "",
+  "uploaded",
+  "processing",
+  "ready",
+  "flagged",
+  "failed",
+];
+const sensitivityOptions: (Sensitivity | "")[] = ["", "safe", "flagged", "unknown"];
 
 export const LibraryPage = () => {
   const { token } = useAuth();
   const { byVideoId } = useVideoProgress();
   const [list, setList] = useState<Video[]>([]);
   const [statusFilter, setStatusFilter] = useState<VideoStatus | "">("");
-  const [sensitivityFilter, setSensitivityFilter] = useState<Sensitivity | "">(
-    "",
-  );
+  const [sensitivityFilter, setSensitivityFilter] = useState<Sensitivity | "">("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,113 +53,137 @@ export const LibraryPage = () => {
 
   const mergedRows = list.map((v) => {
     const live = byVideoId[v.videoId];
-    const progress =
-      live?.progress ?? (typeof v.progress === "number" ? v.progress : 0);
+    const progress = live?.progress ?? (typeof v.progress === "number" ? v.progress : 0);
     const status = (live?.status as Video["status"]) ?? v.status;
     return { ...v, displayProgress: progress, displayStatus: status };
   });
 
   return (
-    <Box className="space-y-4">
-      <Typography variant="h4" component="h1">
-        Video library
-      </Typography>
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-      <Paper className="p-4 flex flex-wrap gap-4 items-end">
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            label="Status"
-            value={statusFilter}
-            onChange={(e) =>
-              setStatusFilter(e.target.value as VideoStatus | "")
-            }
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="uploaded">uploaded</MenuItem>
-            <MenuItem value="processing">processing</MenuItem>
-            <MenuItem value="ready">ready</MenuItem>
-            <MenuItem value="flagged">flagged</MenuItem>
-            <MenuItem value="failed">failed</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel>Sensitivity</InputLabel>
-          <Select
-            label="Sensitivity"
-            value={sensitivityFilter}
-            onChange={(e) =>
-              setSensitivityFilter(e.target.value as Sensitivity | "")
-            }
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="safe">safe</MenuItem>
-            <MenuItem value="flagged">flagged</MenuItem>
-            <MenuItem value="unknown">unknown</MenuItem>
-          </Select>
-        </FormControl>
-        <Button variant="outlined" onClick={() => void load()}>
-          Refresh
-        </Button>
-      </Paper>
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">Video library</h1>
+        <p className="mt-1 text-sm text-slate-400">
+          Review uploads, processing state, and open any accessible video.
+        </p>
+      </div>
 
-      {loading ? (
-        <LinearProgress />
-      ) : (
-        <Table component={Paper} size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Sensitivity</TableCell>
-              <TableCell>Progress</TableCell>
-              <TableCell>Size</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {mergedRows.map((row) => (
-              <TableRow key={row.videoId} hover>
-                <TableCell>{row.originalName}</TableCell>
-                <TableCell>
-                  <Chip size="small" label={row.displayStatus} />
-                </TableCell>
-                <TableCell>
-                  <Chip size="small" label={row.sensitivity} />
-                </TableCell>
-                <TableCell>
-                  <Box className="flex items-center gap-2 min-w-[120px]">
-                    <LinearProgress
-                      variant="determinate"
-                      value={Math.min(100, row.displayProgress)}
-                      className="flex-1"
-                    />
-                    <Typography variant="caption">
-                      {Math.round(row.displayProgress)}%
-                    </Typography>
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  {(row.sizeBytes / (1024 * 1024)).toFixed(2)} MB
-                </TableCell>
-                <TableCell>
-                  <Button
-                    component={RouterLink}
-                    to={`/videos/${row.videoId}`}
-                    size="small"
-                  >
-                    Open
-                  </Button>
-                </TableCell>
-              </TableRow>
+      {error && <Alert>{error}</Alert>}
+
+      <Card className="p-3">
+        <div className="flex flex-wrap gap-2">
+          <select
+            className="h-10 min-w-36 rounded-xl border border-white/15 bg-white/5 px-3 text-sm outline-none focus:border-violet-400/50"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as VideoStatus | "")}
+          >
+            {statusOptions.map((v) => (
+              <option key={v || "all"} value={v}>
+                {v || "All status"}
+              </option>
             ))}
-          </TableBody>
-        </Table>
-      )}
-    </Box>
+          </select>
+          <select
+            className="h-10 min-w-36 rounded-xl border border-white/15 bg-white/5 px-3 text-sm outline-none focus:border-violet-400/50"
+            value={sensitivityFilter}
+            onChange={(e) => setSensitivityFilter(e.target.value as Sensitivity | "")}
+          >
+            {sensitivityOptions.map((v) => (
+              <option key={v || "all"} value={v}>
+                {v || "All sensitivity"}
+              </option>
+            ))}
+          </select>
+          <Button variant="outline" onClick={() => void load()}>
+            Refresh
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="overflow-hidden p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-white/10 bg-white/5 text-xs uppercase tracking-wide text-slate-300">
+              <tr>
+                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Sensitivity</th>
+                <th className="px-4 py-3 font-medium">Progress</th>
+                <th className="px-4 py-3 font-medium">Size</th>
+                <th className="px-4 py-3 font-medium">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td className="px-4 py-6 text-slate-400" colSpan={6}>
+                    Loading videos...
+                  </td>
+                </tr>
+              ) : mergedRows.length === 0 ? (
+                <tr>
+                  <td className="px-4 py-6 text-slate-400" colSpan={6}>
+                    No videos found for the selected filters.
+                  </td>
+                </tr>
+              ) : (
+                mergedRows.map((row, idx) => (
+                  <motion.tr
+                    key={row.videoId}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: idx * 0.03 }}
+                    className="border-b border-white/8 text-slate-200 last:border-none hover:bg-white/5"
+                  >
+                    <td className="max-w-[28rem] truncate px-4 py-3">{row.originalName}</td>
+                    <td className="px-4 py-3">
+                      <Badge
+                        label={row.displayStatus}
+                        tone={row.displayStatus === "failed" ? "danger" : "neutral"}
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge
+                        label={row.sensitivity}
+                        tone={
+                          row.sensitivity === "safe"
+                            ? "safe"
+                            : row.sensitivity === "flagged"
+                              ? "warn"
+                              : "neutral"
+                        }
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex min-w-[180px] items-center gap-2">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 transition-all"
+                            style={{ width: `${Math.min(100, row.displayProgress)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-slate-300">
+                          {Math.round(row.displayProgress)}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">
+                      {(row.sizeBytes / (1024 * 1024)).toFixed(2)} MB
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        to={`/videos/${row.videoId}`}
+                        className="inline-flex h-8 items-center rounded-xl border border-white/15 bg-white/5 px-3 text-xs text-slate-200 transition hover:bg-white/10"
+                      >
+                        Open
+                      </Link>
+                    </td>
+                  </motion.tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
   );
 };
