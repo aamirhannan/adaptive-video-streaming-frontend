@@ -9,6 +9,16 @@ import { Card } from "../components/ui/card.js";
 import { Input } from "../components/ui/input.js";
 import { Spinner } from "../components/ui/spinner.js";
 
+const DEMO_PASSWORD = "Test@123";
+const DEMO_ACCOUNTS = [
+  { label: "Admin", email: "admin@gmail.com" },
+  { label: "Editor", email: "editor@gmail.com" },
+  { label: "Viewer", email: "viewer@gmail.com" },
+] as const;
+
+const showDemoLogin =
+  import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_LOGIN === "true";
+
 export const LoginPage = () => {
   const { login, token, loading } = useAuth();
   const navigate = useNavigate();
@@ -59,6 +69,32 @@ export const LoginPage = () => {
               Sign in to manage uploads, sharing, and playback.
             </p>
             {error && <Alert>{error}</Alert>}
+            {showDemoLogin && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Demo accounts
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {DEMO_ACCOUNTS.map((acc) => (
+                    <Button
+                      key={acc.email}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      disabled={submitting}
+                      onClick={() => {
+                        setEmail(acc.email);
+                        setPassword(DEMO_PASSWORD);
+                        setError(null);
+                      }}
+                    >
+                      {acc.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-3">
               <Input
                 type="email"
