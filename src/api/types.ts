@@ -43,3 +43,12 @@ export type Video = {
 };
 
 export type StreamQuality = "240" | "480" | "720";
+
+export type VideoShare = {
+  shareId: string;
+  videoId: string;
+  sharedWithUserId: string;
+  sharedByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+};

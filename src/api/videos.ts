@@ -1,7 +1,13 @@
 import { getApiBaseUrl } from "../lib/config.js";
 import { ApiError } from "./errors.js";
 import { apiFetch } from "./client.js";
-import type { Video, VideoStatus, Sensitivity, StreamQuality } from "./types.js";
+import type {
+  Video,
+  VideoShare,
+  VideoStatus,
+  Sensitivity,
+  StreamQuality,
+} from "./types.js";
 
 export type ListVideosParams = {
   status?: VideoStatus;
@@ -28,6 +34,48 @@ export const getVideo = async (
     method: "GET",
     token,
   });
+};
+
+export const listVideoShares = async (
+  token: string,
+  videoId: string,
+): Promise<{ shares: VideoShare[] }> => {
+  return apiFetch<{ shares: VideoShare[] }>(
+    `/api/videos/${encodeURIComponent(videoId)}/shares`,
+    {
+      method: "GET",
+      token,
+    },
+  );
+};
+
+export const createVideoShare = async (
+  token: string,
+  videoId: string,
+  sharedWithUserId: string,
+): Promise<{ share: VideoShare }> => {
+  return apiFetch<{ share: VideoShare }>(
+    `/api/videos/${encodeURIComponent(videoId)}/shares`,
+    {
+      method: "POST",
+      body: JSON.stringify({ sharedWithUserId }),
+      token,
+    },
+  );
+};
+
+export const deleteVideoShare = async (
+  token: string,
+  videoId: string,
+  shareId: string,
+): Promise<void> => {
+  return apiFetch<void>(
+    `/api/videos/${encodeURIComponent(videoId)}/shares/${encodeURIComponent(shareId)}`,
+    {
+      method: "DELETE",
+      token,
+    },
+  );
 };
 
 export type UploadVideoResult = { video: Video };
