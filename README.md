@@ -42,7 +42,7 @@ React (Vite) UI for the assignment workflow: **register/login**, modern animated
 
 1. **Register** or **login** — JWT stored in `localStorage` (`avs_token`, `avs_user`).
 2. **Library** — lists accessible videos (owned + shared with me); optional filters `status`, `sensitivity`; progress merged from **Socket.io** events. The table includes **Created By** from `ownerEmail`.
-3. **Upload** (editor/admin) — multipart upload with **XHR progress**; processing phases shown via sockets.
+3. **Upload** (editor/admin) — multipart upload with **XHR progress**; max file size is **20MB**; processing phases shown via sockets.
 4. **Video detail** — metadata, sensitivity, analysis summary; **player** uses `<video src>` with `access_token` and `quality` query params so the browser performs HTTP Range requests (incremental buffering) against the stream URL.
 5. **Sharing (editor/admin)** — share a video with a viewer using **userId or email**, list active shares, and revoke share access.
 6. **Delete video (editor/admin)** — delete a video and cascade cleanup (video record + shares + files) via backend API.
