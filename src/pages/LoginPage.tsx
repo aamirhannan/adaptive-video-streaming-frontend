@@ -16,8 +16,8 @@ const DEMO_ACCOUNTS = [
   { label: "Viewer", email: "viewer@gmail.com" },
 ] as const;
 
-const showDemoLogin =
-  import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_LOGIN === "true";
+const showDemoLogin = true
+  // import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_LOGIN === "true";
 
 export const LoginPage = () => {
   const { login, token, loading } = useAuth();
